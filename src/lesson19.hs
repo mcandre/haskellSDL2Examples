@@ -15,12 +15,13 @@ import Foreign.Marshal.Utils
 import Foreign.Ptr
 import Foreign.Storable
 import GHC.Word
+import GHC.Int
 
 
 ---- Config ----
 
 lessonTitle :: String
-lessonTitle = "lesson15"
+lessonTitle = "lesson19"
 
 screenWidth :: CInt
 screenWidth = 640
@@ -28,15 +29,12 @@ screenWidth = 640
 screenHeight :: CInt
 screenHeight = 480
 
-initialState :: World
-initialState = World { gameover = False, degrees = 0, flipType = SDL.rendererFlipNone }
-
 
 ---- Application ----
 
 main :: IO ()
 main = do
-    initializeSDL [SDL.initFlagVideo] >>= catchRisky
+    initializeSDL [SDL.initFlagVideo, SDL.initFlagGameController] >>= catchRisky
     initializeSDLImage [Image.InitPNG] >>= catchRisky
 
     setHint "SDL_RENDER_SCALE_QUALITY" "1" >>= logWarning
@@ -44,21 +42,28 @@ main = do
     renderer <- createRenderer window (-1) [SDL.rendererFlagAccelerated, SDL.rendererFlagPresentVSync] >>= catchRisky
 
     asset <- loadTexture renderer "./assets/arrow.png" >>= catchRisky
+    gameController <- SDL.gameControllerOpen 0
+
+    disableEventPolling [SDL.eventTypeControllerAxisMotion, SDL.eventTypeJoyAxisMotion]
+
+    let initialState = World { gameover = False, controller = gameController, target = (screenWidth `div` 2, screenHeight `div` 2) }
 
     let inputSource = pollEvent `into` updateState
     let pollDraw = inputSource ~>~ drawState renderer [asset]
     runStateT (repeatUntilComplete pollDraw) initialState
 
+    SDL.gameControllerClose gameController
     freeAssets [asset]
     SDL.destroyRenderer renderer
     SDL.destroyWindow window
+
     SDL.quit
     Image.quit
 
 
 data Key = Q | W | E | A | S | D | N
 data ColourProperty = Red | Green | Blue | Alpha
-data World = World { gameover :: Bool, degrees :: Int, flipType :: SDL.RendererFlip }
+data World = World { gameover :: Bool, controller :: SDL.GameController, target :: (CInt, CInt) }
 type Input = Maybe SDL.Event
 type Asset = (SDL.Texture, CInt, CInt)
 
@@ -67,16 +72,56 @@ fullWindow :: SDL.Rect
 fullWindow = toRect 0 0 screenWidth screenHeight
 
 
+disableEventPolling :: [Word32] -> IO ()
+disableEventPolling = mapM_ (`SDL.eventState` 0)
+
+
 drawState :: SDL.Renderer -> [Asset] -> World -> IO ()
-drawState renderer assets state = withBlankScreen renderer $
-    with2 mask position $ \mask' position' ->
-        SDL.renderCopyEx renderer texture mask' position' degrees' nullPtr (flipType state)
+drawState renderer assets state = withBlankScreen renderer $ do
+    inputState <- getControllerState (controller state)
+    with2 mask (position inputState) $ \mask' position' ->
+        SDL.renderCopyEx renderer texture mask' position' degrees' nullPtr SDL.rendererFlipNone
 
     where (texture, w, h) = head assets
           sprite = toRect 0 0 w h
           mask = sprite
-          position = sprite `centredOn` fullWindow
-          degrees' = fromIntegral (degrees state)
+          position grrr = (sprite `centredOn` fullWindow) `moveBy` (superScale grrr)
+          degrees' = 0
+
+
+superScale :: (Double, Double) -> (Int, Int)
+superScale (x, y) = (floor $ 200 * x, floor $ 200 * y)
+
+
+getControllerState :: SDL.GameController -> IO (Double, Double)
+getControllerState controller = do
+    xValue <- getAxisState controller 0
+    yValue <- getAxisState controller 1
+
+    let range = hypotenuse xValue yValue
+    let deadZone = 8000 ^ 2
+
+    let carpetValue = if range < deadZone
+        then (0, 0)
+        else ((fromIntegral xValue) / 32768, (fromIntegral yValue) / 32768)
+
+    return carpetValue
+
+
+hypotenuse a b = (a ^ 2 + b ^ 2)
+
+
+getAxisState :: SDL.GameController -> SDL.GameControllerAxis -> IO Int
+getAxisState controller index = do
+    axis <- SDL.gameControllerGetAxis controller index 
+    return $ fromIntegral axis
+
+
+within :: (Ord a) => a -> (a, a) -> Bool
+within x (lower, upper)
+    | upper < lower             = within x (upper, lower)
+    | lower <= x && upper > x   = True
+    | otherwise                 = False
 
 
 withBlankScreen :: SDL.Renderer -> IO a -> IO ()
@@ -89,31 +134,17 @@ withBlankScreen renderer operation = do
 
 updateState :: Input -> World -> World
 updateState (Just (SDL.QuitEvent _ _)) state = state { gameover = True }
-updateState (Just (SDL.KeyboardEvent evtType _ _ _ _ keysym)) state = if evtType == SDL.eventTypeKeyDown
-    then modifyState state keysym
-    else state
+--updateState (Just (SDL.JoyAxisEvent evtType _ _ axis value)) state =
+    --if evtType == SDL.eventTypeControllerAxisMotion
+    --modifyState state axis value 
+    --else state
 updateState _ state = state
 
 
-modifyState :: World -> SDL.Keysym -> World
-modifyState state keysym = case getKey keysym of
-    Q -> state { flipType = SDL.rendererFlipHorizontal }
-    W -> state { flipType = SDL.rendererFlipNone }
-    E -> state { flipType = SDL.rendererFlipVertical }
-    A -> state { degrees = degrees state - 15 }
-    D -> state { degrees = degrees state + 15 }
-    _ -> state
-
-
-getKey :: SDL.Keysym -> Key
-getKey keysym = case keysymScancode keysym of
-    20 -> Q
-    26 -> W
-    8  -> E
-    4  -> A
-    22 -> S
-    7  -> D
-    _  -> N
+modifyState :: World -> Word8 -> Int16 -> World
+modifyState state 0 value = state { target = target state `movePointBy` (value, 0) }
+modifyState state 1 value = state { target = target state `movePointBy` (0, value) }
+modifyState state _ _ = state
 
 
 repeatUntilComplete :: (Monad m) => m World -> m ()
@@ -202,16 +233,13 @@ renderTexture renderer texture renderMask renderQuad = with2 renderMask renderQu
 
 ---- Geometry ----
 
-instance Num (GeomPoint) where
+instance Num (CInt, CInt) where
    (ax, ay) + (bx, by) = (ax + bx, ay + by)
    (ax, ay) - (bx, by) = (ax - bx, ay - by)
    (ax, ay) * (bx, by) = (ax * bx, ay * by)
    abs (x, y) = (abs x, abs y)
    signum (x, y) = (signum x, signum y)
    fromInteger a = (fromInteger a, 0)
-
-
-type GeomPoint = (CInt, CInt)
 
 
 toRect :: (Integral a) => a -> a -> a -> a -> SDL.Rect
@@ -222,21 +250,25 @@ moveTo :: (Integral a1, Integral a2) => SDL.Rect -> (a1, a2) -> SDL.Rect
 moveTo rect (x, y) = rect { rectX = fromIntegral x, rectY = fromIntegral y }
 
 
-moveBy :: (Integral a1, Integral a2) => SDL.Rect -> (a1, a2) -> SDL.Rect
-moveBy shape (x, y) = shape { rectX = rectX shape + fromIntegral x, rectY = rectY shape + fromIntegral y }
+moveBy :: (Integral a) => SDL.Rect -> (a, a) -> SDL.Rect
+moveBy shape (dx, dy) = shape { rectX = rectX shape + fromIntegral dx, rectY = rectY shape + fromIntegral dy }
+
+
+movePointBy :: (Integral a1, Integral a2) => (CInt, CInt) -> (a1, a2) -> (CInt, CInt)
+movePointBy (ox, oy) (dx, dy) = (ox + fromIntegral dx, oy + fromIntegral dy)
 
 
 centredOn :: SDL.Rect -> SDL.Rect -> SDL.Rect
 centredOn inner outer = inner `moveBy` (centreOf outer - centreOf inner)
 
 
-centreOf :: SDL.Rect -> GeomPoint
+centreOf :: SDL.Rect -> (CInt, CInt)
 centreOf shape = (x, y)
     where x = rectX shape + rectW shape `div` 2
           y = rectY shape + rectH shape `div` 2
 
 
-toSDLPoint :: GeomPoint -> SDL.Point
+toSDLPoint :: (CInt, CInt) -> SDL.Point
 toSDLPoint (x, y) = SDL.Point { pointX = x, pointY = y }
 
 
@@ -247,7 +279,7 @@ pollEvent = alloca $ \pointer -> do
     status <- SDL.pollEvent pointer
 
     if status == 1
-        then maybePeek peek pointer
+        then peek pointer >>= print >> maybePeek peek pointer
         else return Nothing
 
 
