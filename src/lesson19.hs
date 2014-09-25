@@ -43,6 +43,7 @@ main = do
 
     asset <- loadTexture renderer "./assets/arrow.png" >>= catchRisky
     gameController <- SDL.gameControllerOpen 0
+    if gameController == nullPtr then fail "no controller found" else print "yay!"
 
     disableEventPolling [SDL.eventTypeControllerAxisMotion, SDL.eventTypeJoyAxisMotion]
 
@@ -90,7 +91,11 @@ drawState renderer assets state = withBlankScreen renderer $ do
 
 
 superScale :: (Double, Double) -> (Int, Int)
-superScale (x, y) = (floor $ 200 * x, floor $ 200 * y)
+superScale = pairMap $ floor . (*) 200
+
+
+pairMap :: (a -> b) -> (a, a) -> (b, b)
+pairMap f (x, y) = (f x, f y)
 
 
 getControllerState :: SDL.GameController -> IO (Double, Double)
@@ -103,25 +108,26 @@ getControllerState controller = do
 
     let carpetValue = if range < deadZone
         then (0, 0)
-        else ((fromIntegral xValue) / 32768, (fromIntegral yValue) / 32768)
+        else pairMap ssscale (xValue, yValue)
 
     return carpetValue
+    where ssscale x = fromIntegral x / 32768
 
 
-hypotenuse a b = (a ^ 2 + b ^ 2)
+hypotenuse :: (Num a) => a -> a -> a
+hypotenuse a b = a ^ 2 + b ^ 2
 
 
 getAxisState :: SDL.GameController -> SDL.GameControllerAxis -> IO Int
 getAxisState controller index = do
-    axis <- SDL.gameControllerGetAxis controller index 
+    axis <- SDL.gameControllerGetAxis controller index
     return $ fromIntegral axis
 
 
 within :: (Ord a) => a -> (a, a) -> Bool
 within x (lower, upper)
-    | upper < lower             = within x (upper, lower)
-    | lower <= x && upper > x   = True
-    | otherwise                 = False
+    | upper < lower     = within x (upper, lower)
+    | otherwise         = lower <= x && upper > x
 
 
 withBlankScreen :: SDL.Renderer -> IO a -> IO ()
@@ -134,21 +140,11 @@ withBlankScreen renderer operation = do
 
 updateState :: Input -> World -> World
 updateState (Just (SDL.QuitEvent _ _)) state = state { gameover = True }
---updateState (Just (SDL.JoyAxisEvent evtType _ _ axis value)) state =
-    --if evtType == SDL.eventTypeControllerAxisMotion
-    --modifyState state axis value 
-    --else state
 updateState _ state = state
 
 
-modifyState :: World -> Word8 -> Int16 -> World
-modifyState state 0 value = state { target = target state `movePointBy` (value, 0) }
-modifyState state 1 value = state { target = target state `movePointBy` (0, value) }
-modifyState state _ _ = state
-
-
 repeatUntilComplete :: (Monad m) => m World -> m ()
-repeatUntilComplete game = game >>= \state -> unless (gameover state) $ repeatUntilComplete game
+repeatUntilComplete game = game >>= \state -> unless (gameover state) (repeatUntilComplete game)
 
 
 ---- Initialization ----
@@ -323,7 +319,10 @@ infixl 4 ~>>
 
 infixl 4 ~>~
 (~>~) :: (Monad (t m), Monad m, MonadTrans t) => t m a -> (a -> m b) -> t m a
-(~>~) m f = m >>= \x -> (lift . f) x >> return x
+(~>~) m f = m >>= pass (lift . f)
+
+pass :: (Monad m) => (a -> m b) -> a -> m a
+pass f v = f v >> return v
 
 
 into :: (Monad m, MonadTrans t, MonadState b (t m)) => m a -> (a -> b -> b) -> t m b
