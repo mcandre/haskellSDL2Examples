@@ -8,7 +8,8 @@ cabal-version:       >=1.10
 executable lesson01
   main-is:             lesson01.hs
   build-depends:       base >=4.6,
-                       sdl2
+                       sdl2,
+                       mtl
   hs-source-dirs:      src
   default-language:    Haskell2010
   ghc-options:         -Wall -fno-warn-unused-do-bind
@@ -17,7 +18,8 @@ executable lesson01
 executable lesson02
   main-is:             lesson02.hs
   build-depends:       base >=4.6,
-                       sdl2
+                       sdl2,
+                       mtl
   hs-source-dirs:      src
   default-language:    Haskell2010
   ghc-options:         -Wall -fno-warn-unused-do-bind
@@ -26,7 +28,8 @@ executable lesson02
 executable lesson03
   main-is:             lesson03.hs
   build-depends:       base >=4.6,
-                       sdl2
+                       sdl2,
+                       mtl
   hs-source-dirs:      src
   default-language:    Haskell2010
   ghc-options:         -Wall -fno-warn-unused-do-bind
@@ -35,7 +38,8 @@ executable lesson03
 executable lesson04
   main-is:             lesson04.hs
   build-depends:       base >=4.6,
-                       sdl2
+                       sdl2,
+                       mtl
   hs-source-dirs:      src
   default-language:    Haskell2010
   ghc-options:         -Wall -fno-warn-unused-do-bind
@@ -44,7 +48,8 @@ executable lesson04
 executable lesson05
   main-is:             lesson05.hs
   build-depends:       base >=4.6,
-                       sdl2
+                       sdl2,
+                       mtl
   hs-source-dirs:      src
   default-language:    Haskell2010
   ghc-options:         -Wall -fno-warn-unused-do-bind
@@ -54,7 +59,8 @@ executable lesson06
   main-is:             lesson06.hs
   build-depends:       base >=4.6,
                        sdl2,
-                       sdl2-image
+                       sdl2-image,
+                       mtl
   hs-source-dirs:      src
   default-language:    Haskell2010
   ghc-options:         -Wall -fno-warn-unused-do-bind
@@ -64,7 +70,8 @@ executable lesson07
   main-is:             lesson07.hs
   build-depends:       base >=4.6,
                        sdl2,
-                       sdl2-image
+                       sdl2-image,
+                       mtl
   hs-source-dirs:      src
   default-language:    Haskell2010
   ghc-options:         -Wall -fno-warn-unused-do-bind
@@ -73,7 +80,8 @@ executable lesson07
 executable lesson08
   main-is:             lesson08.hs
   build-depends:       base >=4.6,
-                       sdl2
+                       sdl2,
+                       mtl
   hs-source-dirs:      src
   default-language:    Haskell2010
   ghc-options:         -Wall -fno-warn-unused-do-bind
@@ -83,7 +91,8 @@ executable lesson09
   main-is:             lesson09.hs
   build-depends:       base >=4.6,
                        sdl2,
-                       sdl2-image
+                       sdl2-image,
+                       mtl
   hs-source-dirs:      src
   default-language:    Haskell2010
   ghc-options:         -Wall -fno-warn-unused-do-bind
@@ -93,7 +102,8 @@ executable lesson10
   main-is:             lesson10.hs
   build-depends:       base >=4.6,
                        sdl2,
-                       sdl2-image
+                       sdl2-image,
+                       mtl
   hs-source-dirs:      src
   default-language:    Haskell2010
   ghc-options:         -Wall -fno-warn-unused-do-bind
@@ -103,7 +113,8 @@ executable lesson11
   main-is:             lesson11.hs
   build-depends:       base >=4.6,
                        sdl2,
-                       sdl2-image
+                       sdl2-image,
+                       mtl
   hs-source-dirs:      src
   default-language:    Haskell2010
   ghc-options:         -Wall -fno-warn-unused-do-bind
