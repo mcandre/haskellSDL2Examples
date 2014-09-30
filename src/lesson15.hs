@@ -284,11 +284,6 @@ applyToPointer :: (Storable a) => (a -> b) -> Ptr a -> IO b
 applyToPointer operation pointer = liftM operation $ peek pointer
 
 
-infixl 4 ~>>
-(~>>) :: (Monad (t m), Monad m, MonadTrans t) => t m a -> (a -> m b) -> t m b
-(~>>) m f = m >>= lift . f
-
-
 infixl 4 ~>~
 (~>~) :: (Monad (t m), Monad m, MonadTrans t) => t m a -> (a -> m b) -> t m a
 (~>~) m f = m >>= \x -> (lift . f) x >> return x
