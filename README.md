@@ -6,9 +6,31 @@ Check out the inspiration [here](http://lazyfoo.net/tutorials/SDL/index.php)
 
 ## Setup
 
-The following paths can be renamed to whatever you like; I don't get the packages from Hackage as the SDL2 Image bindings provided below are simpler
+### SDL, SDL-Image C libraries
 
-These instructions will only work if you have SDL2 and SDL2Image on your system; as this is platform-specific I'm not going to cover it - Google is your friend!
+Mac OS X users can install SDL2 and SDL2-Image with Homebrew:
+
+    $ brew install sdl2 sdl2_image
+
+Linux users can install SDL2 and SDL2-Image with Aptitude:
+
+    $ sudo apt-get install libsdl2-dev libsdl2-image-dev
+
+Windows users may refer to MinGW tutorials for installing SDL2 / SDL2-Image:
+
+* [MinGW tutorial](https://users.cs.jmu.edu/bernstdh/web/common/help/cpp_mingw-sdl-setup.php)
+* [SDL_image binaries](https://www.libsdl.org/projects/SDL_image/)
+
+### Cabal
+
+* ghc 7.8+
+* cabal 1.18+
+
+Consult Homebrew, Aptitude, or Chocolatey to install GHC and Cabal.
+
+### SDL, SDL-Image Haskell bindings
+
+The following paths can be renamed to whatever you like; I don't get the packages from Hackage as the SDL2 Image bindings provided below are simpler.
 
 The library locations and folder names are just suggestions, put them wherever suits you.
 
