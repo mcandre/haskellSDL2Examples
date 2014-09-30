@@ -251,15 +251,18 @@ applyToPointer :: (Storable a) => (a -> b) -> Ptr a -> IO b
 applyToPointer operation pointer = liftM operation $ peek pointer
 
 
+-- frontkick: do f of m, returning as a monad in m
 infixl 4 ~>>
 (~>>) :: (Monad (t m), Monad m, MonadTrans t) => t m a -> (a -> m b) -> t m b
 (~>>) m f = m >>= lift . f
 
 
+-- sidekick: do f of m, returning the value of m
 infixl 4 ~>~
 (~>~) :: (Monad (t m), Monad m, MonadTrans t) => t m a -> (a -> m b) -> t m a
 (~>~) m f = m >>= \x -> (lift . f) x >> return x
 
 
+-- Tap into source, update state, return source
 into :: (Monad m, MonadTrans t, MonadState b (t m)) => m a -> (a -> b -> b) -> t m b
 into source f = lift source >>= modify . f >> get
