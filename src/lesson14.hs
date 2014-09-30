@@ -66,10 +66,12 @@ type Asset = (SDL.Texture, CInt, CInt)
 fullWindow :: SDL.Rect
 fullWindow = toRect 0 0 screenWidth screenHeight
 
+getAnimationFrame :: Int -> Int -> Int -> Int
+getAnimationFrame frame slowdown sprites = (frame `div` slowdown) `mod` sprites
 
 drawState :: SDL.Renderer -> [Asset] -> World -> IO ()
 drawState renderer assets (World False frameValue) = withBlankScreen renderer $ do
-    let currentFrame = (frameValue `div` 8) `mod` 8
+    let currentFrame = getAnimationFrame frameValue 8 8
     let (texture, _, _) = head assets
     let spriteRect = toRect 0 0 192 192 
 
