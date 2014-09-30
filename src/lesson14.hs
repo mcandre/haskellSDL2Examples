@@ -71,7 +71,7 @@ drawState :: SDL.Renderer -> [Asset] -> World -> IO ()
 drawState renderer assets (World False frameValue) = withBlankScreen renderer $ do
     let currentFrame = (frameValue `div` 8) `mod` 8
     let (texture, _, _) = head assets
-    let spriteRect = toRect 0 0 192 192 
+    let spriteRect = toRect 0 0 192 192
 
     with2 (getMask currentFrame) (spriteRect `centredOn` fullWindow ) (SDL.renderCopy renderer texture)
 
