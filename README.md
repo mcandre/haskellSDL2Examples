@@ -48,4 +48,5 @@ To run the first lesson,
 * Lesson 13 - press 'w' and 's' to fade in or out the foreground
 * Lesson 14 - a walking animation
 * Lesson 15 - an arrow that rotates with the Q, W, E, A and D keys
+* Lesson 16 - an interactive walking animation
 
