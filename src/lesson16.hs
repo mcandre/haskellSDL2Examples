@@ -85,7 +85,7 @@ drawState :: SDL.Renderer -> [Asset] -> World -> IO ()
 drawState renderer [walkingDirectionsAsset, walkingAsset] world@(World False frameValue directionValue walkingValue positionValue) = withBlankScreen renderer $ do
     let currentFrame = if walkingValue
                           then (frameValue `div` 8) `mod` 8
-                          else 0
+                          else 1
     let (walkingDirectionsTexture, _, _) = walkingDirectionsAsset
     let (walkingTexture, _, _) = walkingAsset
     let spriteRect = toRect 0 0 192 192 
